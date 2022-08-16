@@ -8,7 +8,7 @@ def newWord():
             dictionary_words[word] = word_definition
     menu()
 
-def udskriv():
+def output():
     for key, value in dictionary_words.items():
         print(key, ' : ', value)
     menu()
@@ -27,7 +27,7 @@ def menu():
     if choice == "1":
         newWord()
     if choice == "2":
-        udskriv()
+        output()
     if choice == "0":
         print("Goodbye")
     if choice == "search":
