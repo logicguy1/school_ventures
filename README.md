@@ -1,4 +1,4 @@
-# school_projects
+# school_assignments
 A collection of programs we make in school
 
 **1. Project - Python dictionary (dictionary.py)**
