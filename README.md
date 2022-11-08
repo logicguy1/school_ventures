@@ -1,6 +1,5 @@
-# School assignments
-A collection of programs we make in school
-
+# school ventures
+tears were lost during the making of this collection
 
 ## Python programs
 ### 1. Project - Python dictionary (dictionary.py)
