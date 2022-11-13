@@ -1,6 +1,6 @@
 # Projects
-1. wxEncrypt
-2. wxFB
+1. wxCalc
+2. wxEncrypt
 3. wxLiteratureDatabase
 
 ## wxEncrypt
