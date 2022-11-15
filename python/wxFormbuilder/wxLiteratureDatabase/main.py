@@ -38,19 +38,13 @@ class MainFrame(gui.MainFrame):
         year = str(self.textCtrl_year.GetValue())
         genre = str(self.choice_genre.GetStringSelection())
 
-        if fname == "":
-            fname = "%"
-        if sname == "":
-            sname = "%"
-        if title == "":
-            title = "%"
-        if publisher == "":
-            publisher = "%"
-        if year == "":
-            year = "%"
-        if genre == "":
-            genre = "%"
-        
+        fname = "%" if fname == "" else fname
+        sname = "%" if sname == "" else sname
+        title = "%" if title == "" else title
+        publisher = "%" if publisher == "" else publisher
+        year = "%" if year == "" else year
+        genre = "%" if genre == "" else genre
+
         book_data = self.dataModel.searchBooks(self.con, (title, sname, fname, publisher, year, genre))
         self.dataView_book.DeleteAllItems()
 
