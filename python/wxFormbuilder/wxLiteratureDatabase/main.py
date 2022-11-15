@@ -1,15 +1,24 @@
+import sqlite3 as lite
+from pubsub import pub as pb
+
 import wx
 import gui
-import sqlite3 as lite
-from fpdf import FPDF
-from database_model import DatabaseModel
 import datetime
-from pubsub import pub as pb
+
+from database_model import DatabaseModel
+from fpdf import FPDF
+
 
 class MainFrame(gui.MainFrame):
     """
     Class for second user interface
 
+    Attributes:
+        LogFrame: The frame used for logging
+        con: sqlite3 database object
+        cur: sqlite3 cursor object
+        dataModel: The database model used for data communication
+    
     Methods:
         btn_search: Searches database with given search args
         loadData: Loads the database with books and articles
@@ -19,59 +28,59 @@ class MainFrame(gui.MainFrame):
         btn_add_article: Opens dialogbox and adds named article
         btn_delete: Deletes books and articles from database
         btn_log: Opens LogFrame and shows all logs
-        onClose = exits window
+        onClose: exits window
     """
 
     def __init__(self, parent): 
         gui.MainFrame.__init__(self, parent)
         self.LogFrame = LogFrame(self)
 
+        # Fixed value
         self.con = lite.connect('literature.db')
         self.cur = self.con.cursor()
         self.dataModel = DatabaseModel(pb)
     
     def btn_search(self, event):
-        fname = str(self.textCtrl_firstname.GetValue())
-        sname = str(self.textCtrl_surname.GetValue())
-        title = str(self.textCtrl_title.GetValue())
-        publisher = str(self.textCtrl_publisher.GetValue())
-        year = str(self.textCtrl_year.GetValue())
-        genre = str(self.choice_genre.GetStringSelection())
+        # Fixed value
+        fname = self.textCtrl_firstname.GetValue()
+        sname = self.textCtrl_surname.GetValue()
+        title = self.textCtrl_title.GetValue()
+        publisher = self.textCtrl_publisher.GetValue()
+        year = self.textCtrl_year.GetValue()
+        genre = self.choice_genre.GetStringSelection()
+        
+        ctxFilter = lambda x: "%" if str(x) == "" else str(x)
 
-        fname = "%" if fname == "" else fname
-        sname = "%" if sname == "" else sname
-        title = "%" if title == "" else title
-        publisher = "%" if publisher == "" else publisher
-        year = "%" if year == "" else year
-        genre = "%" if genre == "" else genre
-
-        book_data = self.dataModel.searchBooks(self.con, (title, sname, fname, publisher, year, genre))
+        book_data = self.dataModel.searchBooks(
+                self.con, 
+                tuple(map(ctxFilter, (title, sname, fname, publisher, year, genre),))
+            )
         self.dataView_book.DeleteAllItems()
 
         for book in book_data:
             self.dataView_book.AppendItem(book)
 
     def loadData(self, event):
-        self.dataView_viewBooks.DeleteAllItems()
-        self.dataView_viewArticles.DeleteAllItems()
+        # Fixed value
         article_data = self.dataModel.getArticle(self.con)
         book_data = self.dataModel.getBooks(self.con)
+
+        self.dataView_viewBooks.DeleteAllItems()
+        self.dataView_viewArticles.DeleteAllItems()
         
+        # Most recent holder
         for item in article_data:
-            self.dataView_viewArticles.AppendItem(item)
+            self.dataView_viewArticles.AppendItem(list(map(str, item)))
 
         for item in book_data:
-            self.dataView_viewBooks.AppendItem(item)
+            self.dataView_viewBooks.AppendItem(list(map(str, item)))
 
     def btn_export_txt(self, event):
+        # Fixed value
         all_books = self.dataModel.getBooks(self.con)
-        txt_file = open("books.txt", "w+", encoding='utf-8')
-        for book in all_books:
-            for item in book:
-              txt_file.write(str(item))
-              txt_file.write(', ')
-            txt_file.write('\n')
-        txt_file.close()
+        with open("books.txt", "w+", encoding='utf-8') as txt_file:
+            for book in all_books:
+                txt_file.write(", ".join(book) + '\n')
 
     def btn_export_pdf(self, event):
         pdf = FPDF()
@@ -80,10 +89,7 @@ class MainFrame(gui.MainFrame):
         all_books = self.dataModel.getBooks(self.con)
         
         for book in all_books:
-            line = ''
-            for item in book:
-              line += str(item)
-              line += ', '
+            line = ", ".join(book)
             pdf.cell(200, 10, txt = line, ln = 1, align = 'L')
         pdf.output("books.pdf")  
 
@@ -92,6 +98,7 @@ class MainFrame(gui.MainFrame):
         result = dlg.ShowModal()
 
         if result == wx.ID_OK:
+            # Fixed value
             fname = dlg.bookCtrl_fname.GetValue()
             sname = dlg.bookCtrl_sname.GetValue()
             title = dlg.bookCtrl_title.GetValue()
@@ -104,11 +111,14 @@ class MainFrame(gui.MainFrame):
         if result == wx.ID_CLOSE:
             self.EndModal(wx.ID_CLOSE)
 
+        self.loadData(None)
+
     def btn_add_article(self, event):
         dlg = gui.AddArticleDialog(self)
         result = dlg.ShowModal()
 
         if result == wx.ID_OK:
+            # Fixed value
             title = dlg.artCtrl_title.GetValue()
             sname = dlg.artCtrl_sname.GetValue()
             fname = dlg.artCtrl_fname.GetValue()
@@ -116,20 +126,26 @@ class MainFrame(gui.MainFrame):
             issue = dlg.artCtrl_issue.GetValue()
             month = dlg.choice_month.GetStringSelection()
             year = dlg.artCtrl_year.GetValue()
-            date = month + " " + year 
+            date = "{month} {year}"
 
             self.dataModel.addArticle(self.con, (title, sname, fname, magazine, issue, date))
 
+        self.loadData(None)
+
     def btn_delete(self, event):
         if self.dataView_viewBooks.HasSelection():
+            # Fixed value
             selectedRow = self.dataView_viewBooks.GetSelectedRow()
             item = int(self.dataView_viewBooks.GetValue(selectedRow,0))
             self.dataModel.deleteBook(self.con, item)
 
         if self.dataView_viewArticles.HasSelection():
+            # Fixed value
             selectedRow = self.dataView_viewArticles.GetSelectedRow()
             item = int(self.dataView_viewArticles.GetValue(selectedRow,0))
             self.dataModel.deleteArticle(self.con, item)
+
+        self.loadData(None)
 
     def btn_log(self, event):
         self.LogFrame.Show(True)
@@ -138,9 +154,13 @@ class MainFrame(gui.MainFrame):
         self.con.close()
         exit()
 
+
 class LogFrame(gui.LogFrame):
     """
     Class for second user interface
+
+    Attributes:
+        pb: Pubsub object for handeling events
 
     Methods:
         listener: Recieves message and adds it to the log
@@ -152,6 +172,7 @@ class LogFrame(gui.LogFrame):
         pb.subscribe(self.listener, "MyMainFrame")
 
     def listener(self, message):
+        # Temperarry
         msg = self.log_staticText.Label
         msg += datetime.datetime.now().strftime("%H:%M:%S %m/%d/%Y  | ")
         msg += message + "\n"
@@ -159,9 +180,11 @@ class LogFrame(gui.LogFrame):
         self.log_staticText.SetLabel(msg)
 
     def onClose(self, event):
-        wx.LogFrame.Close()
+        self.Show(False)
 
-app = wx.App(False)
-frame = MainFrame(None)
-frame.Show(True)
-app.MainLoop()
+
+if __name__ == "__main__":
+    app = wx.App(False)
+    frame = MainFrame(None)
+    frame.Show(True)
+    app.MainLoop()
